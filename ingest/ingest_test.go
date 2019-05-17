@@ -1,14 +1,17 @@
 package ingest
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"image"
-	"image/draw"
 	_ "image/png" // Pull in png decoder.
 	"io/ioutil"
 	"os"
+	"reflect"
 	"testing"
+
+	"github.com/konkers/lacodex/model"
 
 	"github.com/anthonynsimon/bild/util"
 )
@@ -55,16 +58,8 @@ f`,
 	},
 }
 
-func AsRGBA(src image.Image) *image.RGBA {
-	srcBounds := src.Bounds()
-	destBounds := image.Rect(0, 0, srcBounds.Dx(), srcBounds.Dy())
-	img := image.NewRGBA(destBounds)
-	draw.Draw(img, destBounds, src, srcBounds.Min, draw.Src)
-	return img
-}
-
 func imageCompare(t *testing.T, name string, tag string, testImg image.Image, goldImg image.Image) bool {
-	return util.RGBAImageEqual(AsRGBA(testImg), AsRGBA(goldImg))
+	return util.RGBAImageEqual(asRGBA(testImg), asRGBA(goldImg))
 }
 
 func testImage(t *testing.T, name string, tag string, img image.Image) {
@@ -118,16 +113,29 @@ func TestPrepImage(t *testing.T) {
 		ocrImg := ocrPrep(contentImg)
 		testImage(t, i.name, "testout-ocrprep", ocrImg)
 
-		text, err := ocr(ocrImg)
+		record, err := ocr(gameImg)
 		if err != nil {
-			t.Fatal(err)
+			t.Error(err)
+			continue
 		}
-		goldBytes, err := ioutil.ReadFile(fmt.Sprintf("test_data/%s-ocr.txt", i.name))
+
+		b, err := ioutil.ReadFile(fmt.Sprintf("test_data/%s-ocr-record.json", i.name))
 		if err != nil {
-			t.Fatal(err)
+			t.Error(err)
+			continue
 		}
-		if text != string(goldBytes) {
-			t.Errorf("%s text failed ocr: %s", i.name, text)
+
+		var goldRecord model.Record
+		err = json.Unmarshal(b, &goldRecord)
+		if err != nil {
+			t.Error(err)
+			continue
 		}
+
+		if !reflect.DeepEqual(record, &goldRecord) {
+			t.Errorf("%s record does not match gold", i.name)
+			continue
+		}
+
 	}
 }
