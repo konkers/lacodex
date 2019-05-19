@@ -20,6 +20,8 @@ const nativeHeight = 480
 const msxContentWidth = 604
 const msxContentHeight = 412
 
+const confidenceThreshold = 60
+
 var normalColor = color.RGBA{230, 232, 236, 255}
 var blueColor = color.RGBA{100, 182, 227, 255}
 var greenColor = color.RGBA{96, 229, 147, 255}
@@ -215,11 +217,27 @@ func ocrImage(tag string, img image.Image, invert bool) (*model.Record, error) {
 	client := gosseract.NewClient()
 	defer client.Close()
 	client.SetImageFromBytes(b.Bytes())
-	text, err := client.Text()
+
+	text := ""
+	boxes, err := client.GetBoundingBoxes(gosseract.RIL_PARA)
 	if err != nil {
 		return nil, err
 	}
+	for _, box := range boxes {
+		if box.Confidence > confidenceThreshold {
+			text += box.Word
+		}
+	}
+	text = strings.TrimSpace(text)
 	writeIntermediateText(tag, text)
+
+	if text == "" {
+		return nil, fmt.Errorf("No text found in image")
+	}
+
+	if text == "OK" {
+		return nil, fmt.Errorf("Image is untranslated glyphs")
+	}
 
 	keyphrases, err := getKeyphrases(client, img)
 	if err != nil {
