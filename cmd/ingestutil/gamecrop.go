@@ -47,12 +47,12 @@ func writeImage(fileName string, suffix string, img image.Image) error {
 
 	writer, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		return fmt.Errorf("Failed to open %s for writing: %v\n", fileName, err)
+		return fmt.Errorf("failed to open %s for writing: %v", fileName, err)
 	}
 
 	err = png.Encode(writer, img)
 	if err != nil {
-		return fmt.Errorf("Failed to encode %s as png: %v\n", fileName, err)
+		return fmt.Errorf("failed to encode %s as png: %v", fileName, err)
 	}
 
 	return nil
@@ -62,7 +62,7 @@ func (p *gamecropCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
 	for _, fileName := range f.Args() {
 		img, err := openImage(fileName)
 		if err != nil {
-			fmt.Printf("%v", err)
+			fmt.Printf("%v\n", err)
 			return subcommands.ExitFailure
 		}
 
@@ -70,7 +70,7 @@ func (p *gamecropCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
 
 		err = writeImage(fileName, "game", croppedImg)
 		if err != nil {
-			fmt.Printf("%v", err)
+			fmt.Printf("%v\n", err)
 			return subcommands.ExitFailure
 		}
 

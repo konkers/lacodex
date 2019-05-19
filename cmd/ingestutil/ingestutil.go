@@ -13,6 +13,7 @@ func main() {
 	subcommands.Register(subcommands.FlagsCommand(), "")
 	subcommands.Register(subcommands.CommandsCommand(), "")
 	subcommands.Register(&gamecropCmd{}, "")
+	subcommands.Register(&processCmd{}, "")
 
 	flag.Parse()
 	ctx := context.Background()
