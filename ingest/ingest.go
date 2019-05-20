@@ -10,6 +10,7 @@ import (
 
 	"github.com/anthonynsimon/bild/effect"
 	"github.com/anthonynsimon/bild/transform"
+	"github.com/konkers/lacodex/imageutil"
 	"github.com/konkers/lacodex/model"
 	"github.com/otiai10/gosseract"
 )
@@ -97,64 +98,13 @@ func dominantColor(img *image.RGBA, threshold uint8) color.RGBA {
 	return color.RGBA{uint8(r), uint8(g), uint8(b), 0xff}
 }
 
-func delta(a, b uint8) uint32 {
-	if a > b {
-		return uint32(a - b)
-	} else {
-		return uint32(b - a)
-	}
-}
-
-func colorDelta(c1 color.RGBA, c2 color.RGBA) uint32 {
-	return delta(c1.R, c2.R) + delta(c1.G, c2.G) + delta(c1.B, c2.B)
-}
-
-// image Compare compares two images
-//
-// Returns: likeness factor between 0.0 and 1.0.
-//
-// If any pixel is not fully opaque (alpha of 0xff) in either image, that pixel
-// is not compared.  The comparison assumes that the two images are of the same
-// size.
-func imageCompare(imgA image.Image, imgB image.Image) float64 {
-	a, ok := imgA.(*image.RGBA)
-	if !ok {
-		a = asRGBA(imgA)
-	}
-
-	b, ok := imgB.(*image.RGBA)
-	if !ok {
-		b = asRGBA(imgB)
-	}
-
-	w, h := a.Bounds().Dx(), a.Bounds().Dy()
-	aX, aY := a.Bounds().Min.X, a.Bounds().Min.Y
-	bX, bY := b.Bounds().Min.X, b.Bounds().Min.Y
-
-	delta := uint32(0)
-	n := uint32(0)
-
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
-			cA := a.RGBAAt(aX+x, aY+y)
-			cB := b.RGBAAt(bX+x, bY+y)
-			if cA.A == 0xff && cB.A == 0xff {
-				n++
-				delta += colorDelta(cA, cB)
-			}
-		}
-	}
-
-	return 1.0 - float64(delta)/float64(n*3*0xff)
-}
-
 func wordType(img *image.RGBA) model.KeyphraseType {
 	c := dominantColor(img, 0xc0)
 	deltaThreshold := uint32(20)
 	switch {
-	case colorDelta(c, blueColor) < deltaThreshold:
+	case imageutil.ColorDelta(c, blueColor) < deltaThreshold:
 		return model.KeyphraseTypeBlue
-	case colorDelta(c, greenColor) < deltaThreshold:
+	case imageutil.ColorDelta(c, greenColor) < deltaThreshold:
 		return model.KeyphraseTypeGreen
 	default:
 		return model.KeyphraseTypeNone
@@ -168,7 +118,7 @@ func getKeyphrases(client *gosseract.Client, img image.Image) (map[model.Keyphra
 		return nil, err
 	}
 
-	normalizedImg := asRGBA(img)
+	normalizedImg := imageutil.AsRGBA(img)
 	prevType := model.KeyphraseTypeNone
 	keyphrases := map[model.KeyphraseType][]string{}
 	for i, box := range boxes {
@@ -293,7 +243,7 @@ func classifyImage(img image.Image) (model.RecordType, float64, error) {
 			return model.RecordTypeTent, 0.0, err
 		}
 
-		c := imageCompare(img, refImg)
+		c := imageutil.ImageCompare(img, refImg)
 		if c > confidence {
 			confidence = c
 			recordType = t

@@ -12,6 +12,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/konkers/lacodex/imageutil"
 	"github.com/konkers/lacodex/model"
 	"github.com/stretchr/testify/assert"
 
@@ -39,7 +40,7 @@ var testImages = []testImageDesc{
 }
 
 func testImagesEqual(t *testing.T, name string, tag string, testImg image.Image, goldImg image.Image) bool {
-	return util.RGBAImageEqual(asRGBA(testImg), asRGBA(goldImg))
+	return util.RGBAImageEqual(imageutil.AsRGBA(testImg), imageutil.AsRGBA(goldImg))
 }
 
 func testImage(t *testing.T, name string, tag string, img image.Image) {
@@ -106,26 +107,26 @@ func TestImageCompare(t *testing.T) {
 
 	draw.Draw(a, a.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
 	draw.Draw(b, b.Bounds(), &image.Uniform{white}, image.ZP, draw.Src)
-	assert.InDelta(t, 0.0, imageCompare(a, b), 1e-9)
+	assert.InDelta(t, 0.0, imageutil.ImageCompare(a, b), 1e-9)
 
 	draw.Draw(a, a.Bounds(), &image.Uniform{white}, image.ZP, draw.Src)
 	draw.Draw(b, b.Bounds(), &image.Uniform{white}, image.ZP, draw.Src)
-	assert.InDelta(t, 1.0, imageCompare(a, b), 1e-9)
+	assert.InDelta(t, 1.0, imageutil.ImageCompare(a, b), 1e-9)
 
 	draw.Draw(a, a.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
 	draw.Draw(b, b.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
-	assert.InDelta(t, 1.0, imageCompare(a, b), 1e-9)
+	assert.InDelta(t, 1.0, imageutil.ImageCompare(a, b), 1e-9)
 
 	draw.Draw(a, a.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
 	draw.Draw(b, b.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
 	draw.Draw(b, halfBounds, &image.Uniform{white}, image.ZP, draw.Src)
-	assert.InDelta(t, 0.5, imageCompare(a, b), 1e-9)
+	assert.InDelta(t, 0.5, imageutil.ImageCompare(a, b), 1e-9)
 
 	draw.Draw(a, a.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
 	draw.Draw(b, b.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
 	draw.Draw(b, halfBounds, &image.Uniform{white}, image.ZP, draw.Src)
 	draw.Draw(a, halfBounds, &image.Uniform{clear}, image.ZP, draw.Src)
-	assert.InDelta(t, 1.0, imageCompare(a, b), 1e-9)
+	assert.InDelta(t, 1.0, imageutil.ImageCompare(a, b), 1e-9)
 }
 
 func TestClassifyImage(t *testing.T) {

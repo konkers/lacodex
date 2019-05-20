@@ -4,21 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"image"
-	"image/draw"
 	"image/png"
 	"os"
 	"path/filepath"
 )
 
 var intermediatePrefix = ""
-
-func asRGBA(src image.Image) *image.RGBA {
-	srcBounds := src.Bounds()
-	destBounds := image.Rect(0, 0, srcBounds.Dx(), srcBounds.Dy())
-	img := image.NewRGBA(destBounds)
-	draw.Draw(img, destBounds, src, srcBounds.Min, draw.Src)
-	return img
-}
 
 func writeIntermediateText(tag string, text string) {
 	if intermediatePrefix == "" {
