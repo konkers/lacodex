@@ -12,11 +12,11 @@ import (
 	"os"
 	"testing"
 
+	"github.com/anthonynsimon/bild/util"
 	"github.com/konkers/lacodex/imageutil"
 	"github.com/konkers/lacodex/model"
+	"github.com/konkers/lacodex/testutil"
 	"github.com/stretchr/testify/assert"
-
-	"github.com/anthonynsimon/bild/util"
 )
 
 var writeIntermediates bool
@@ -67,19 +67,7 @@ func testImage(t *testing.T, name string, tag string, img image.Image) {
 }
 
 func loadTestImage(t *testing.T, name string) image.Image {
-	imgFile := fmt.Sprintf("test_data/%s.png", name)
-	reader, err := os.Open(imgFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer reader.Close()
-
-	img, _, err := image.Decode(reader)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return img
+	return testutil.LoadTestImage(t, fmt.Sprintf("test_data/%s.png", name))
 }
 
 func TestGameCropImage(t *testing.T) {
