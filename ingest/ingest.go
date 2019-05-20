@@ -34,7 +34,7 @@ func middleCrop(img image.Image, width int, height int) image.Image {
 	return transform.Crop(img, cropRect)
 }
 
-func cropGameImage(img image.Image) image.Image {
+func CropGameImage(img image.Image) image.Image {
 	// First calculate the scale and crop.
 	bounds := img.Bounds()
 	scale := bounds.Dy() / nativeHeight
@@ -46,12 +46,6 @@ func cropGameImage(img image.Image) image.Image {
 	writeIntermediateImg("cropped-game", croppedGameImg)
 
 	return croppedGameImg
-}
-
-// UtilCropGameImage is a function to be used by debugging utilities to
-// produce and image cropped for the game's size.
-func UtilCropGameImage(img image.Image) image.Image {
-	return cropGameImage(img)
 }
 
 // Takes a cropped game image.
@@ -309,7 +303,7 @@ func classifyImage(img image.Image) (model.RecordType, float64, error) {
 }
 
 func IngestImage(img image.Image) (*model.Record, error) {
-	img = cropGameImage(img)
+	img = CropGameImage(img)
 	recordType, confidence, err := classifyImage(img)
 	if err != nil {
 		return nil, err

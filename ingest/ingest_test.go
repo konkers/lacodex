@@ -90,7 +90,7 @@ func TestGameCropImage(t *testing.T) {
 			intermediatePrefix = "testGameCrop-" + name
 		}
 
-		gameImg := cropGameImage(img)
+		gameImg := CropGameImage(img)
 		testImage(t, name, "testout-game", gameImg)
 	}
 }
@@ -143,7 +143,7 @@ func TestClassifyImage(t *testing.T) {
 
 	for _, test := range tests {
 		img := loadTestImage(t, test.name)
-		gameImg := cropGameImage(img)
+		gameImg := CropGameImage(img)
 		recordType, confidence, err := classifyImage(gameImg)
 		if err != nil {
 			t.Errorf("Failed to classify %s: %v", test.name, err)
@@ -162,7 +162,7 @@ func TestIngest(t *testing.T) {
 			intermediatePrefix = "testIngest-" + name
 		}
 		img := loadTestImage(t, name)
-		gameImg := cropGameImage(img)
+		gameImg := CropGameImage(img)
 		record, err := IngestImage(gameImg)
 		if err != nil {
 			t.Errorf("Failed to classify %s: %v", name, err)

@@ -66,7 +66,7 @@ func (p *gamecropCmd) Execute(_ context.Context, f *flag.FlagSet, _ ...interface
 			return subcommands.ExitFailure
 		}
 
-		croppedImg := ingest.UtilCropGameImage(img)
+		croppedImg := ingest.CropGameImage(img)
 
 		err = writeImage(fileName, "game", croppedImg)
 		if err != nil {
