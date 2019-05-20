@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/png"
+	"log"
 	"os"
 	"path/filepath"
 )
@@ -20,7 +21,7 @@ func writeIntermediateText(tag string, text string) {
 	fileName := filepath.Join("intermediates", fmt.Sprintf("%s-%s.txt", intermediatePrefix, tag))
 	writer, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		fmt.Printf("Failed to write intermediate file %s: %v\n", fileName, err)
+		log.Printf("Failed to write intermediate file %s: %v\n", fileName, err)
 		return
 	}
 	defer writer.Close()
@@ -37,14 +38,14 @@ func writeIntermediateJson(tag string, obj interface{}) {
 	fileName := filepath.Join("intermediates", fmt.Sprintf("%s-%s.json", intermediatePrefix, tag))
 	writer, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		fmt.Printf("Failed to write intermediate file %s: %v\n", fileName, err)
+		log.Printf("Failed to write intermediate file %s: %v\n", fileName, err)
 		return
 	}
 	defer writer.Close()
 
 	b, err := json.MarshalIndent(obj, "", "  ")
 	if err != nil {
-		fmt.Printf("Failed to encode intermediate %s: %v\n", fileName, err)
+		log.Printf("Failed to encode intermediate %s: %v\n", fileName, err)
 		return
 	}
 	writer.Write(b)
@@ -60,13 +61,13 @@ func writeIntermediateImg(tag string, img image.Image) {
 	imgName := filepath.Join("intermediates", fmt.Sprintf("%s-%s.png", intermediatePrefix, tag))
 	writer, err := os.OpenFile(imgName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		fmt.Printf("Failed to write intermediate image %s: %v\n", imgName, err)
+		log.Printf("Failed to write intermediate image %s: %v\n", imgName, err)
 		return
 	}
 
 	err = png.Encode(writer, img)
 	if err != nil {
-		fmt.Printf("Failed to endode intermediate image %s: %v\n", imgName, err)
+		log.Printf("Failed to endode intermediate image %s: %v\n", imgName, err)
 		return
 	}
 

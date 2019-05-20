@@ -63,3 +63,24 @@ func TestLoadTestImageBadFile(t *testing.T) {
 		t.Fatal("Expected failure.")
 	}
 }
+
+func TestWriteImageFailure(t *testing.T) {
+	var ft fakeT
+
+	// Un-encodable image.
+	img := image.NewRGBA(image.Rect(0, 0, 0, 0))
+	writeImage(&ft, "test.png", img)
+	if ft.failed == false {
+		t.Fatal("Expected failure.")
+	}
+	ft.failed = false
+	defer os.Remove("testout/test.png")
+
+	// Un-openable image.
+	os.Chmod("testout/test.png", 0)
+	img = image.NewRGBA(image.Rect(0, 0, 100, 100))
+	writeImage(&ft, "test.png", img)
+	if ft.failed == false {
+		t.Fatal("Expected failure.")
+	}
+}

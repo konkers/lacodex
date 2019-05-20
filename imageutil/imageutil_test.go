@@ -41,3 +41,14 @@ func TestImageCompare(t *testing.T) {
 	draw.Draw(a, halfBounds, &image.Uniform{clear}, image.ZP, draw.Src)
 	assert.InDelta(t, 1.0, ImageCompare(a, b), 1e-9)
 }
+
+func TestImageCompareNonRGBA(t *testing.T) {
+	black := color.Gray{0}
+	white := color.Gray{255}
+
+	a := image.NewGray(image.Rect(0, 0, 100, 100))
+	b := image.NewGray(image.Rect(0, 0, 100, 100))
+	draw.Draw(a, a.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
+	draw.Draw(b, b.Bounds(), &image.Uniform{white}, image.ZP, draw.Src)
+	assert.InDelta(t, 0.0, ImageCompare(a, b), 1e-9)
+}

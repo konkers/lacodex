@@ -16,15 +16,17 @@ var testRNG = rand.New(rand.NewSource(928084234))
 func writeImage(t T, fileName string, img image.Image) {
 	os.MkdirAll("testout", 0755)
 
+	fileName = filepath.Join("testout", fileName)
 	writer, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
-		fmt.Printf("Failed to test output image %s: %v\n", fileName, err)
+		t.Fatalf("Failed to test output image %s: %v\n", fileName, err)
 		return
 	}
+	defer writer.Close()
 
 	err = png.Encode(writer, img)
 	if err != nil {
-		fmt.Printf("Failed to endode test output timage %s: %v\n", fileName, err)
+		t.Fatalf("Failed to endode test output timage %s: %v\n", fileName, err)
 		return
 	}
 

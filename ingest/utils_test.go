@@ -1,7 +1,10 @@
 package ingest
 
 import (
+	"bytes"
+	"image"
 	"io/ioutil"
+	"log"
 	"os"
 	"testing"
 
@@ -11,7 +14,6 @@ import (
 )
 
 func TestWriteIntermediateText(t *testing.T) {
-
 	fileName := "./intermediates/utils-test-text-1.txt"
 	intermediatePrefix = "utils-test-text"
 	writeIntermediateText("1", "test")
@@ -21,8 +23,19 @@ func TestWriteIntermediateText(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	assert.Equal(t, "test", string(buf))
+
+	var logBuf bytes.Buffer
+	log.SetOutput(&logBuf)
+	defer log.SetOutput(os.Stdout)
+
+	// Un-writable intermediate
+	os.Chmod(fileName, 0)
+	writeIntermediateText("1", "test")
+	if logBuf.Len() == 0 {
+		t.Error("Expected warning to have been logged")
+	}
+	logBuf.Reset()
 }
 
 func TestWriteIntermediateJson(t *testing.T) {
@@ -35,8 +48,26 @@ func TestWriteIntermediateJson(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	assert.Equal(t, "\"test\"", string(buf))
+
+	var logBuf bytes.Buffer
+	log.SetOutput(&logBuf)
+	defer log.SetOutput(os.Stdout)
+
+	// Un-encodable JSON
+	writeIntermediateJson("1", make(chan int))
+	if logBuf.Len() == 0 {
+		t.Error("Expected warning to have been logged")
+	}
+	logBuf.Reset()
+
+	// Un-writable intermediate
+	os.Chmod(fileName, 0)
+	writeIntermediateJson("1", "test")
+	if logBuf.Len() == 0 {
+		t.Error("Expected warning to have been logged")
+	}
+	logBuf.Reset()
 }
 
 func TestWriteIntermediateImg(t *testing.T) {
@@ -49,4 +80,24 @@ func TestWriteIntermediateImg(t *testing.T) {
 
 	interImg := testutil.LoadTestImage(t, fileName)
 	testutil.AssertImagesEqual(t, img, interImg)
+
+	var logBuf bytes.Buffer
+	log.SetOutput(&logBuf)
+	defer log.SetOutput(os.Stdout)
+
+	// Un-encodable image.
+	img = image.NewRGBA(image.Rect(0, 0, 0, 0))
+	writeIntermediateImg("1", img)
+	if logBuf.Len() == 0 {
+		t.Error("Expected warning to have been logged")
+	}
+	logBuf.Reset()
+
+	// Un-writable intermediate
+	os.Chmod(fileName, 0)
+	writeIntermediateImg("1", img)
+	if logBuf.Len() == 0 {
+		t.Error("Expected warning to have been logged")
+	}
+	logBuf.Reset()
 }
