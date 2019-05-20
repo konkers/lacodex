@@ -3,10 +3,18 @@ sudo: true
 go:
  - 1.10.x
 before_install:
+  # We need tesseract 4 to get reliable recognition.
   - sudo add-apt-repository -y ppa:alex-p/tesseract-ocr
   - sudo apt-get update
   - sudo apt-get install -y tesseract-ocr-dev tesseract-ocr-eng libleptonica-dev
   - go get github.com/mattn/goveralls
+  # If we don't export TZ, times stored in storm come back with a nil Localtion.
   - export TZ=America/Los_Angeles
 script:
- - $HOME/gopath/bin/goveralls -service=travis-ci
+  # This we don't want to generate coverage for ./cmd so we have to list all
+  # other dirs explicitly.  This is fragile and needs to be updated every time
+  # a new sub directory is added.
+  - go test ./... -coverprofile=coverage.out -coverpkg=./,./imagedb,./imageutil,./ingest,./model,./testutil
+
+after_success:
+  - goveralls -service=travis-ci -coverprofile=coverage.out
