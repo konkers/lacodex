@@ -9,12 +9,11 @@ import (
 	"image/draw"
 	_ "image/png" // Pull in png decoder.
 	"io/ioutil"
-	"math"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/konkers/lacodex/model"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/anthonynsimon/bild/util"
 )
@@ -96,12 +95,6 @@ func TestGameCropImage(t *testing.T) {
 	}
 }
 
-func floatTest(t *testing.T, expected float64, actual float64) {
-	if !(math.Abs(expected-actual) < 1e-9) {
-		t.Errorf("Expected %f, got %f insted", expected, actual)
-	}
-}
-
 func TestImageCompare(t *testing.T) {
 	clear := color.RGBA{0, 0, 0, 0}
 	black := color.RGBA{0, 0, 0, 255}
@@ -113,26 +106,26 @@ func TestImageCompare(t *testing.T) {
 
 	draw.Draw(a, a.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
 	draw.Draw(b, b.Bounds(), &image.Uniform{white}, image.ZP, draw.Src)
-	floatTest(t, 0.0, imageCompare(a, b))
+	assert.InDelta(t, 0.0, imageCompare(a, b), 1e-9)
 
 	draw.Draw(a, a.Bounds(), &image.Uniform{white}, image.ZP, draw.Src)
 	draw.Draw(b, b.Bounds(), &image.Uniform{white}, image.ZP, draw.Src)
-	floatTest(t, 1.0, imageCompare(a, b))
+	assert.InDelta(t, 1.0, imageCompare(a, b), 1e-9)
 
 	draw.Draw(a, a.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
 	draw.Draw(b, b.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
-	floatTest(t, 1.0, imageCompare(a, b))
+	assert.InDelta(t, 1.0, imageCompare(a, b), 1e-9)
 
 	draw.Draw(a, a.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
 	draw.Draw(b, b.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
 	draw.Draw(b, halfBounds, &image.Uniform{white}, image.ZP, draw.Src)
-	floatTest(t, 0.5, imageCompare(a, b))
+	assert.InDelta(t, 0.5, imageCompare(a, b), 1e-9)
 
 	draw.Draw(a, a.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
 	draw.Draw(b, b.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
 	draw.Draw(b, halfBounds, &image.Uniform{white}, image.ZP, draw.Src)
 	draw.Draw(a, halfBounds, &image.Uniform{clear}, image.ZP, draw.Src)
-	floatTest(t, 1.0, imageCompare(a, b))
+	assert.InDelta(t, 1.0, imageCompare(a, b), 1e-9)
 }
 
 func TestClassifyImage(t *testing.T) {
@@ -157,13 +150,8 @@ func TestClassifyImage(t *testing.T) {
 			continue
 		}
 
-		if recordType != test.t {
-			t.Errorf("%s expected record type %v, got %v", test.name, test.t, recordType)
-		}
-
-		if confidence < 0.9 {
-			t.Errorf("%s confidence %f < 0.9", test.name, confidence)
-		}
+		assert.Equal(t, recordType, test.t)
+		assert.GreaterOrEqual(t, confidence, 0.9)
 	}
 }
 
@@ -193,9 +181,6 @@ func TestIngest(t *testing.T) {
 			continue
 		}
 
-		if !reflect.DeepEqual(record, &goldRecord) {
-			t.Errorf("%s record does not match gold", name)
-			continue
-		}
+		assert.Equal(t, &goldRecord, record)
 	}
 }
