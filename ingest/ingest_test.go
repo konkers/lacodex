@@ -5,8 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"image"
-	"image/color"
-	"image/draw"
 	_ "image/png" // Pull in png decoder.
 	"io/ioutil"
 	"os"
@@ -83,40 +81,6 @@ func TestGameCropImage(t *testing.T) {
 		testImage(t, name, "testout-game", gameImg)
 	}
 }
-
-func TestImageCompare(t *testing.T) {
-	clear := color.RGBA{0, 0, 0, 0}
-	black := color.RGBA{0, 0, 0, 255}
-	white := color.RGBA{255, 255, 255, 255}
-
-	a := image.NewRGBA(image.Rect(0, 0, 100, 100))
-	b := image.NewRGBA(image.Rect(0, 0, 100, 100))
-	halfBounds := image.Rect(0, 0, 100, 50)
-
-	draw.Draw(a, a.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
-	draw.Draw(b, b.Bounds(), &image.Uniform{white}, image.ZP, draw.Src)
-	assert.InDelta(t, 0.0, imageutil.ImageCompare(a, b), 1e-9)
-
-	draw.Draw(a, a.Bounds(), &image.Uniform{white}, image.ZP, draw.Src)
-	draw.Draw(b, b.Bounds(), &image.Uniform{white}, image.ZP, draw.Src)
-	assert.InDelta(t, 1.0, imageutil.ImageCompare(a, b), 1e-9)
-
-	draw.Draw(a, a.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
-	draw.Draw(b, b.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
-	assert.InDelta(t, 1.0, imageutil.ImageCompare(a, b), 1e-9)
-
-	draw.Draw(a, a.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
-	draw.Draw(b, b.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
-	draw.Draw(b, halfBounds, &image.Uniform{white}, image.ZP, draw.Src)
-	assert.InDelta(t, 0.5, imageutil.ImageCompare(a, b), 1e-9)
-
-	draw.Draw(a, a.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
-	draw.Draw(b, b.Bounds(), &image.Uniform{black}, image.ZP, draw.Src)
-	draw.Draw(b, halfBounds, &image.Uniform{white}, image.ZP, draw.Src)
-	draw.Draw(a, halfBounds, &image.Uniform{clear}, image.ZP, draw.Src)
-	assert.InDelta(t, 1.0, imageutil.ImageCompare(a, b), 1e-9)
-}
-
 func TestClassifyImage(t *testing.T) {
 	tests := []struct {
 		name string
