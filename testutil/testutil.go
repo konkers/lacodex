@@ -7,14 +7,13 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
-	"testing"
 
 	"github.com/konkers/lacodex/imageutil"
 )
 
 var testRNG = rand.New(rand.NewSource(928084234))
 
-func writeImage(t *testing.T, fileName string, img image.Image) {
+func writeImage(t T, fileName string, img image.Image) {
 	os.MkdirAll("testout", 0755)
 
 	writer, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
@@ -31,7 +30,7 @@ func writeImage(t *testing.T, fileName string, img image.Image) {
 
 }
 
-func AssertImagesEqual(t *testing.T, expectedImg image.Image, actualImg image.Image) {
+func AssertImagesEqual(t T, expectedImg image.Image, actualImg image.Image) {
 	likeness := imageutil.ImageCompare(expectedImg, actualImg)
 	if likeness < 1.0 {
 
@@ -47,7 +46,7 @@ func AssertImagesEqual(t *testing.T, expectedImg image.Image, actualImg image.Im
 	}
 }
 
-func LoadTestImage(t *testing.T, imgFile string) image.Image {
+func LoadTestImage(t T, imgFile string) image.Image {
 	reader, err := os.Open(imgFile)
 	if err != nil {
 		t.Fatal(err)
