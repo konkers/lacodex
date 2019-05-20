@@ -11,10 +11,7 @@ before_install:
   # If we don't export TZ, times stored in storm come back with a nil Localtion.
   - export TZ=America/Los_Angeles
 script:
-  # This we don't want to generate coverage for ./cmd so we have to list all
-  # other dirs explicitly.  This is fragile and needs to be updated every time
-  # a new sub directory is added.
-  - go test ./... -coverprofile=coverage.out -coverpkg=./,./imagedb,./imageutil,./ingest,./model,./testutil
+  - go run scripts/cover/cover.go
 
 after_success:
   - goveralls -service=travis-ci -coverprofile=coverage.out
