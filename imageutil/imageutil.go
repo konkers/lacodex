@@ -64,3 +64,12 @@ func ImageCompare(imgA image.Image, imgB image.Image) float64 {
 
 	return 1.0 - float64(delta)/float64(n*3*0xff)
 }
+
+// OffsetRect offsets the base rectangle by offset.Min
+//
+// This is useful for cropping an image that is already cropped.
+func OffsetRect(base image.Rectangle, offset image.Rectangle) image.Rectangle {
+	base.Min = base.Min.Add(offset.Min)
+	base.Max = base.Max.Add(offset.Min)
+	return base
+}

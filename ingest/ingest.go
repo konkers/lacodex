@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"strconv"
 	"strings"
 
 	"github.com/anthonynsimon/bild/effect"
@@ -192,7 +193,30 @@ func ocrImage(tag string, img image.Image, invert bool) (*model.Record, error) {
 		Text:       text,
 		Keyphrases: keyphrases,
 	}
-	writeIntermediateJson(tag+"-record", record)
+	return record, nil
+}
+
+func ocrTextAt(tag string, img image.Image, rect image.Rectangle, invert bool) (*model.Record, error) {
+	bounds := imageutil.OffsetRect(rect, img.Bounds())
+	return ocrImage(tag, transform.Crop(img, bounds), invert)
+}
+
+func ocrNumbersAt(tag string, img image.Image, rect image.Rectangle, invert bool) (*model.Record, error) {
+	bounds := imageutil.OffsetRect(rect, img.Bounds())
+	record, err := ocrImage(tag, transform.Crop(img, bounds), invert)
+	if err != nil {
+		return nil, err
+	}
+	record.Text = strings.Map(func(r rune) rune {
+		switch r {
+		case 'o':
+			return '0'
+		case 'l':
+			return '1'
+		default:
+			return r
+		}
+	}, record.Text)
 
 	return record, nil
 }
@@ -203,25 +227,48 @@ func ocrScanner(img image.Image) (*model.Record, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	record.Type = model.RecordTypeScanner
+
+	writeIntermediateJson("record", record)
 	return record, nil
 }
 
 func ocrTent(img image.Image) (*model.Record, error) {
-	imgBounds := img.Bounds()
-	cropBounds := image.Rect(105, 125, 535, 310)
-	cropBounds.Min = cropBounds.Min.Add(imgBounds.Min)
-	cropBounds.Max = cropBounds.Max.Add(imgBounds.Min)
+	record, err := ocrTextAt("ocr", img, image.Rect(105, 125, 535, 310), true)
+	if err != nil {
+		return nil, err
+	}
+	record.Type = model.RecordTypeTent
 
-	contentImg := transform.Crop(img, cropBounds)
-	record, err := ocrImage("ocr", contentImg, true)
+	writeIntermediateJson("record", record)
+	return record, nil
+}
+
+func ocrMailer(img image.Image) (*model.Record, error) {
+	record, err := ocrTextAt("ocr", img, image.Rect(18, 178, 622, 446), false)
 	if err != nil {
 		return nil, err
 	}
 
-	record.Type = model.RecordTypeTent
+	indexRecord, err := ocrNumbersAt("ocr-index", img, image.Rect(47, 74, 73, 91), false)
+	if err != nil {
+		return nil, err
+	}
+	index, err := strconv.Atoi(indexRecord.Text)
+	if err != nil {
+		return nil, err
+	}
+	record.Index = &index
 
+	subjectRecord, err := ocrTextAt("ocr", img, image.Rect(77, 74, 523, 92), false)
+	if err != nil {
+		return nil, err
+	}
+	record.Subject = subjectRecord.Text
+
+	record.Type = model.RecordTypeMailer
+
+	writeIntermediateJson("record", record)
 	return record, nil
 }
 
@@ -267,6 +314,8 @@ func IngestImage(img image.Image) (*model.Record, error) {
 		return ocrTent(img)
 	case model.RecordTypeScanner:
 		return ocrScanner(img)
+	case model.RecordTypeMailer:
+		return ocrMailer(img)
 	default:
 		return nil, fmt.Errorf("Can't handle record type %d", recordType)
 	}

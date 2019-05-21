@@ -34,6 +34,8 @@ const (
 type Record struct {
 	Type       RecordType                 `json:"type"`
 	Text       string                     `json:"text"`
+	Subject    string                     `json:"subject,omitempty"`
+	Index      *int                       `json:"index,omitempty"`
 	Keyphrases map[KeyphraseType][]string `json:"keyphrases"`
 }
 

@@ -109,7 +109,14 @@ func TestClassifyImage(t *testing.T) {
 }
 
 func TestIngest(t *testing.T) {
-	tests := []string{"classify-tent0", "classify-tent1", "screenshot1", "screenshot2"}
+	tests := []string{
+		"classify-tent0",
+		"classify-tent1",
+		"screenshot1",
+		"screenshot2",
+		"classify-mailer0",
+		"classify-mailer1",
+	}
 	for _, name := range tests {
 		if writeIntermediates {
 			intermediatePrefix = "testIngest-" + name
