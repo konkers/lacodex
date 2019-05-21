@@ -10,6 +10,10 @@ import (
 
 var referenceImageCache = map[string]image.Image{}
 
+func clearReferenceImageCache() {
+	referenceImageCache = map[string]image.Image{}
+}
+
 func getReferenceImage(name string) (image.Image, error) {
 	img, ok := referenceImageCache[name]
 	if ok {

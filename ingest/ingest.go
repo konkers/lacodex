@@ -299,16 +299,7 @@ func classifyImage(img image.Image) (model.RecordType, float64, error) {
 	return recordType, confidence, nil
 }
 
-func IngestImage(img image.Image) (*model.Record, error) {
-	img = CropGameImage(img)
-	recordType, confidence, err := classifyImage(img)
-	if err != nil {
-		return nil, err
-	}
-	if confidence < 0.9 {
-		return nil, fmt.Errorf("Image classification confidence %f is not hight enough.", confidence)
-	}
-
+func ocr(recordType model.RecordType, img image.Image) (*model.Record, error) {
 	switch recordType {
 	case model.RecordTypeTent:
 		return ocrTent(img)
@@ -319,4 +310,17 @@ func IngestImage(img image.Image) (*model.Record, error) {
 	default:
 		return nil, fmt.Errorf("Can't handle record type %d", recordType)
 	}
+}
+
+func IngestImage(img image.Image) (*model.Record, error) {
+	img = CropGameImage(img)
+	recordType, confidence, err := classifyImage(img)
+	if err != nil {
+		return nil, err
+	}
+	if confidence < 0.9 {
+		return nil, fmt.Errorf("Image classification confidence %f is not high enough", confidence)
+	}
+
+	return ocr(recordType, img)
 }

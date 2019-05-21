@@ -122,8 +122,7 @@ func TestIngest(t *testing.T) {
 			intermediatePrefix = "testIngest-" + name
 		}
 		img := loadTestImage(t, name)
-		gameImg := CropGameImage(img)
-		record, err := IngestImage(gameImg)
+		record, err := IngestImage(img)
 		if err != nil {
 			t.Errorf("Failed to classify %s: %v", name, err)
 			return
@@ -142,5 +141,34 @@ func TestIngest(t *testing.T) {
 		}
 
 		assert.Equal(t, &goldRecord, record)
+	}
+}
+
+func TestIngestNoRefernce(t *testing.T) {
+	img := loadTestImage(t, "classify-tent0")
+
+	// This is pretty gross and breaks parallel testing.
+	os.Rename("reference", "reference0")
+	defer os.Rename("reference0", "reference")
+
+	clearReferenceImageCache()
+	_, err := IngestImage(img)
+	if err == nil {
+		t.Fatal("Expected error.")
+	}
+}
+
+func TestIngestNoMatch(t *testing.T) {
+	img := image.NewRGBA(image.Rect(0, 0, 640, 480))
+	_, err := IngestImage(img)
+	if err == nil {
+		t.Fatal("Expected error.")
+	}
+}
+
+func TestOcrUnknownRecordType(t *testing.T) {
+	_, err := ocr(model.RecordType(-1), nil)
+	if err == nil {
+		t.Fatal("Expected error.")
 	}
 }
