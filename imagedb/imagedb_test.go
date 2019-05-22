@@ -15,6 +15,37 @@ import (
 	"github.com/konkers/lacodex/testutil"
 )
 
+type testIdb struct {
+	Idb      *ImageDB
+	Filename string
+	Db       *storm.DB
+}
+
+func newTestImageDB(t *testing.T) *testIdb {
+	tmpfile, err := ioutil.TempFile("", "imagedbtest.*.db")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	db, err := storm.Open(tmpfile.Name())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bucket := db.From("imagedb")
+	idb := NewImageDB(bucket)
+
+	return &testIdb{
+		Idb:      idb,
+		Filename: tmpfile.Name(),
+		Db:       db,
+	}
+}
+
+func (i *testIdb) Close() {
+	i.Db.Close()
+	os.Remove(i.Filename)
+}
 func TestGetScreenshotTime(t *testing.T) {
 	timestamp, err := getScreenshotTime("230700_20190517183348_1.png")
 	if err != nil {
@@ -59,30 +90,31 @@ func TestEncodeImageFailure(t *testing.T) {
 		t.Error("Expexcted error")
 	}
 }
+
+func TestListImagesFailure(t *testing.T) {
+	testIdb := newTestImageDB(t)
+	idb := testIdb.Idb
+	testIdb.Close()
+
+	_, err := idb.ListImages()
+	if err == nil {
+		t.Error("Expected error")
+	}
+}
+
 func TestImportScreenshot(t *testing.T) {
-	tmpfile, err := ioutil.TempFile("", "imagedbtest.*.db")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Remove(tmpfile.Name())
-
-	db, err := storm.Open(tmpfile.Name())
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
-
-	bucket := db.From("imagedb")
-	idb := NewImageDB(bucket)
+	testIdb := newTestImageDB(t)
+	defer testIdb.Close()
+	idb := testIdb.Idb
 
 	imgA := ingest.CropGameImage(testutil.LoadTestImage(t, "../testdata/screenshots/230700_20190519134140_1.png"))
 	imgB := ingest.CropGameImage(testutil.LoadTestImage(t, "../testdata/screenshots/230700_20190519134145_1.png"))
 
-	err = idb.ImportScreenshot("230700_20190519134140_1.png", imgA)
+	err := idb.ImportScreenshot("230700_20190519134140_1.png", 1, imgA)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = idb.ImportScreenshot("230700_20190519134145_1.png", imgB)
+	err = idb.ImportScreenshot("230700_20190519134145_1.png", 2, imgB)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,17 +130,19 @@ func TestImportScreenshot(t *testing.T) {
 	}
 
 	assert.Equal(t, &model.ImageMetadata{
-		Pk:         1,
+		Id:         1,
 		Hash:       "sha256-8acc37faaea0c3ff4ea847288a76e5f713d5857f14bf6dbdeffe7dbedd3234db",
 		CapturedAt: time.Date(2019, time.Month(5), 19, 13, 41, 40, 0, time.Local),
 		FileName:   "230700_20190519134140_1.png",
+		Record:     1,
 	}, metaA)
 
 	assert.Equal(t, &model.ImageMetadata{
-		Pk:         2,
+		Id:         2,
 		Hash:       "sha256-8acc37faaea0c3ff4ea847288a76e5f713d5857f14bf6dbdeffe7dbedd3234db",
 		CapturedAt: time.Date(2019, time.Month(5), 19, 13, 41, 45, 0, time.Local),
 		FileName:   "230700_20190519134145_1.png",
+		Record:     2,
 	}, metaB)
 
 	img, err := idb.GetImage(metaA.Hash)
@@ -118,15 +152,21 @@ func TestImportScreenshot(t *testing.T) {
 
 	testutil.AssertImagesEqual(t, imgA, img)
 
+	meta, err := idb.ListImages()
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, []*model.ImageMetadata{metaA, metaB}, meta)
+
 	// Test failure case: Unencodable image.
 	img = image.NewRGBA(image.Rect(0, 0, 0, 0))
-	err = idb.ImportScreenshot("230700_20190519134145_1.png", img.(*image.RGBA))
+	err = idb.ImportScreenshot("230700_20190519134145_1.png", 1, img.(*image.RGBA))
 	if err == nil {
 		t.Fatal("Expected error")
 	}
 
 	// Test failure case: Bad file name.
-	err = idb.ImportScreenshot("230700_2019051913414_1.png", imgA)
+	err = idb.ImportScreenshot("230700_2019051913414_1.png", 1, imgA)
 	if err == nil {
 		t.Fatal("Expected error")
 	}

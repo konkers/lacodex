@@ -13,6 +13,7 @@ import (
 var omitDirs = map[string]bool{
 	".git":     true,
 	"cmd":      true,
+	"ui":       true,
 	"scripts":  true,
 	"testdata": true,
 }

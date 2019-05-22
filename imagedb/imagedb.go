@@ -8,7 +8,6 @@ import (
 	"image"
 	"image/png"
 	_ "image/png" // Pull in png decoder.
-	"log"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -73,7 +72,7 @@ func encodeImage(img *image.RGBA) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func (idb *ImageDB) ImportScreenshot(fileName string, img *image.RGBA) error {
+func (idb *ImageDB) ImportScreenshot(fileName string, recordId int, img *image.RGBA) error {
 	bounds := img.Bounds()
 	if bounds.Dx() != 640 && bounds.Dy() != 480 {
 		return fmt.Errorf("Image size (%dx%d) was not the expected 640x480", bounds.Dx(), bounds.Dy())
@@ -86,34 +85,35 @@ func (idb *ImageDB) ImportScreenshot(fileName string, img *image.RGBA) error {
 	}
 
 	hash := calcImageHash(img)
-	imgData, err := encodeImage(img)
-	if err != nil {
-		return err
-	}
+	exists, _ := idb.db.KeyExists(imagesBucket, hash)
 
-	err = idb.db.SetBytes(imagesBucket, hash, imgData)
-	if err != nil {
-		return err
+	if !exists {
+		imgData, err := encodeImage(img)
+		if err != nil {
+			return err
+		}
+
+		err = idb.db.SetBytes(imagesBucket, hash, imgData)
+		if err != nil {
+			return err
+		}
 	}
 
 	meta := model.ImageMetadata{
 		Hash:       hash,
 		CapturedAt: capturedAt,
 		FileName:   baseName,
+		Record:     recordId,
 	}
 
-	fmt.Printf("%#v\n", capturedAt)
-
-	idb.db.Save(&meta)
-
-	return nil
+	return idb.db.Save(&meta)
 }
 
 func (idb *ImageDB) LookupFile(fileName string) (*model.ImageMetadata, error) {
 	var meta model.ImageMetadata
 	err := idb.db.One("FileName", fileName, &meta)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	return &meta, nil
@@ -135,4 +135,13 @@ func (idb *ImageDB) GetImage(hash string) (image.Image, error) {
 	}
 
 	return img, nil
+}
+
+func (idb *ImageDB) ListImages() ([]*model.ImageMetadata, error) {
+	var meta []*model.ImageMetadata
+	err := idb.db.All(&meta)
+	if err != nil {
+		return nil, err
+	}
+	return meta, nil
 }
