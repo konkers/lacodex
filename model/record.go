@@ -28,11 +28,15 @@ const (
 
 	// RecordTypeScanner is a record taken from a tablet.
 	RecordTypeScanner
+
+	// RecordTypeUnknown is a record from a screenshot that is not recognized.
+	RecordTypeUnknown
 )
 
 // Record represents a piece of interesting data in La Mulana
 type Record struct {
-	Type       RecordType                 `json:"type"`
+	Id         int                        `storm:"id,increment" json:"id"`
+	Type       RecordType                 `storm:"index" json:"type"`
 	Text       string                     `json:"text"`
 	Subject    string                     `json:"subject,omitempty"`
 	Index      *int                       `json:"index,omitempty"`
@@ -76,6 +80,8 @@ func (t RecordType) MarshalText() ([]byte, error) {
 		return []byte("mailer"), nil
 	case RecordTypeScanner:
 		return []byte("scanner"), nil
+	case RecordTypeUnknown:
+		return []byte("unknown"), nil
 	}
 
 	return nil, fmt.Errorf("Unknown RecordType %v", t)
@@ -91,6 +97,9 @@ func (t *RecordType) UnmarshalText(text []byte) error {
 		return nil
 	case "scanner":
 		*t = RecordTypeScanner
+		return nil
+	case "unknown":
+		*t = RecordTypeUnknown
 		return nil
 	}
 

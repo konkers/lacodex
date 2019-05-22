@@ -52,6 +52,7 @@ func TestRecordType(t *testing.T) {
 		{RecordTypeTent, "tent"},
 		{RecordTypeMailer, "mailer"},
 		{RecordTypeScanner, "scanner"},
+		{RecordTypeUnknown, "unknown"},
 	}
 
 	for _, v := range values {
