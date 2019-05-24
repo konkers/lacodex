@@ -28,6 +28,7 @@ func getReferenceImage(name string) (image.Image, error) {
 
 	paths := []string{
 		"reference",
+		filepath.Join("ingest", "reference"),
 		filepath.Join(execDir, "..", "src", "github.com", "konkers",
 			"lacodex", "ingest", "reference"),
 	}

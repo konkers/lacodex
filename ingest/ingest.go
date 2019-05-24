@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -27,6 +28,8 @@ const confidenceThreshold = 60
 var normalColor = color.RGBA{230, 232, 236, 255}
 var blueColor = color.RGBA{100, 182, 227, 255}
 var greenColor = color.RGBA{96, 229, 147, 255}
+
+var newlineRegexp = regexp.MustCompile(`\n+`)
 
 func middleCrop(img image.Image, width int, height int) *image.RGBA {
 	bounds := img.Bounds()
@@ -59,8 +62,8 @@ func msxContent(img image.Image) image.Image {
 }
 
 // Takes a cropped msx image
-func ocrPrep(img image.Image, invert bool) image.Image {
-	if invert {
+func ocrPrep(img image.Image, recordType model.RecordType) image.Image {
+	if recordType != model.RecordTypeMailer {
 		img = effect.Invert(img)
 		writeIntermediateImg("ocrprep-inverted", img)
 	}
@@ -68,6 +71,21 @@ func ocrPrep(img image.Image, invert bool) image.Image {
 	greyImg := effect.Grayscale(img)
 	writeIntermediateImg("ocrprep-greyscale", greyImg)
 
+	if recordType == model.RecordTypeScanner {
+		b := greyImg.Bounds()
+		for y := 0; y < b.Dy(); y++ {
+			for x := 0; x < b.Dx(); x++ {
+				p := greyImg.GrayAt(b.Min.X+x, b.Min.Y+y)
+				if p.Y < 0x40 {
+					p.Y = 0x00
+				} else if p.Y > 0x80 {
+					p.Y = 0xff
+				}
+				greyImg.SetGray(b.Min.X+x, b.Min.Y+y, p)
+			}
+		}
+	}
+	writeIntermediateImg("ocrprep-greyscale-threshold", greyImg)
 	return greyImg
 }
 
@@ -90,6 +108,11 @@ func dominantColor(img *image.RGBA, threshold uint8) color.RGBA {
 			}
 		}
 	}
+
+	if n == 0 {
+		return color.RGBA{0, 0, 0, 0}
+	}
+
 	r /= n
 	g /= n
 	b /= n
@@ -148,8 +171,8 @@ func getKeyphrases(client *gosseract.Client, img image.Image) (map[model.Keyphra
 	return keyphrases, nil
 }
 
-func ocrImage(tag string, img image.Image, invert bool) (*model.Record, error) {
-	ocrImg := ocrPrep(img, invert)
+func ocrImage(tag string, img image.Image, recordType model.RecordType) (*model.Record, error) {
+	ocrImg := ocrPrep(img, recordType)
 
 	// There should be some better way to pass this image into tesseract, but
 	// I can't find one.
@@ -174,6 +197,7 @@ func ocrImage(tag string, img image.Image, invert bool) (*model.Record, error) {
 		}
 	}
 	text = strings.TrimSpace(text)
+	text = newlineRegexp.ReplaceAllString(text, "\n")
 	writeIntermediateText(tag, text)
 
 	if text == "" {
@@ -196,19 +220,21 @@ func ocrImage(tag string, img image.Image, invert bool) (*model.Record, error) {
 	return record, nil
 }
 
-func ocrTextAt(tag string, img image.Image, rect image.Rectangle, invert bool) (*model.Record, error) {
+func ocrTextAt(tag string, img image.Image, rect image.Rectangle, recordType model.RecordType) (*model.Record, error) {
 	bounds := imageutil.OffsetRect(rect, img.Bounds())
-	return ocrImage(tag, transform.Crop(img, bounds), invert)
+	return ocrImage(tag, transform.Crop(img, bounds), recordType)
 }
 
-func ocrNumbersAt(tag string, img image.Image, rect image.Rectangle, invert bool) (*model.Record, error) {
+func ocrNumbersAt(tag string, img image.Image, rect image.Rectangle, recordType model.RecordType) (*model.Record, error) {
 	bounds := imageutil.OffsetRect(rect, img.Bounds())
-	record, err := ocrImage(tag, transform.Crop(img, bounds), invert)
+	record, err := ocrImage(tag, transform.Crop(img, bounds), recordType)
 	if err != nil {
 		return nil, err
 	}
 	record.Text = strings.Map(func(r rune) rune {
 		switch r {
+		case 'O':
+			return '0'
 		case 'o':
 			return '0'
 		case 'l':
@@ -223,7 +249,7 @@ func ocrNumbersAt(tag string, img image.Image, rect image.Rectangle, invert bool
 
 func ocrScanner(img image.Image) (*model.Record, error) {
 	contentImg := msxContent(img)
-	record, err := ocrImage("ocr", contentImg, true)
+	record, err := ocrImage("ocr", contentImg, model.RecordTypeScanner)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +260,8 @@ func ocrScanner(img image.Image) (*model.Record, error) {
 }
 
 func ocrTent(img image.Image) (*model.Record, error) {
-	record, err := ocrTextAt("ocr", img, image.Rect(105, 125, 535, 310), true)
+	record, err := ocrTextAt("ocr", img, image.Rect(105, 125, 521, 310),
+		model.RecordTypeTent)
 	if err != nil {
 		return nil, err
 	}
@@ -245,12 +272,12 @@ func ocrTent(img image.Image) (*model.Record, error) {
 }
 
 func ocrMailer(img image.Image) (*model.Record, error) {
-	record, err := ocrTextAt("ocr", img, image.Rect(18, 178, 622, 446), false)
+	record, err := ocrTextAt("ocr", img, image.Rect(18, 178, 622, 446), model.RecordTypeMailer)
 	if err != nil {
 		return nil, err
 	}
 
-	indexRecord, err := ocrNumbersAt("ocr-index", img, image.Rect(47, 74, 73, 91), false)
+	indexRecord, err := ocrNumbersAt("ocr-index", img, image.Rect(47, 74, 73, 91), model.RecordTypeMailer)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +287,7 @@ func ocrMailer(img image.Image) (*model.Record, error) {
 	}
 	record.Index = &index
 
-	subjectRecord, err := ocrTextAt("ocr", img, image.Rect(77, 74, 523, 92), false)
+	subjectRecord, err := ocrTextAt("ocr", img, image.Rect(77, 74, 523, 92), model.RecordTypeMailer)
 	if err != nil {
 		return nil, err
 	}

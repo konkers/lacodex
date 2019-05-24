@@ -92,6 +92,7 @@ func TestClassifyImage(t *testing.T) {
 		{"classify-mailer1", model.RecordTypeMailer},
 		{"screenshot1", model.RecordTypeScanner},
 		{"screenshot2", model.RecordTypeScanner},
+		{"230700_20190519134140_1", model.RecordTypeScanner},
 	}
 
 	for _, test := range tests {
@@ -116,6 +117,7 @@ func TestIngest(t *testing.T) {
 		"screenshot2",
 		"classify-mailer0",
 		"classify-mailer1",
+		"230700_20190519134140_1",
 	}
 	for _, name := range tests {
 		if writeIntermediates {
@@ -130,13 +132,13 @@ func TestIngest(t *testing.T) {
 
 		b, err := ioutil.ReadFile(fmt.Sprintf("test_data/%s-record.json", name))
 		if err != nil {
-			t.Error(err)
+			t.Error(name, ":", err)
 			continue
 		}
 		var goldRecord model.Record
 		err = json.Unmarshal(b, &goldRecord)
 		if err != nil {
-			t.Error(err)
+			t.Error(name, ":", err)
 			continue
 		}
 
