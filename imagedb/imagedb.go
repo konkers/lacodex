@@ -56,7 +56,7 @@ func calcImageHash(img *image.RGBA) string {
 	b := img.Bounds()
 	for y := b.Min.Y; y < b.Max.Y; y++ {
 		offset := img.PixOffset(b.Min.X, y)
-		hash.Sum(img.Pix[offset : offset+b.Dx()*4])
+		hash.Write(img.Pix[offset : offset+b.Dx()*4])
 	}
 
 	return "sha256-" + hex.EncodeToString(hash.Sum(nil))

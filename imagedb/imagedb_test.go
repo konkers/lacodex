@@ -42,6 +42,16 @@ func TestCalcImageHash(t *testing.T) {
 	assert.Equal(t, hashA, hashB)
 }
 
+func TestCalcImageHashDiff(t *testing.T) {
+	imgA := ingest.CropGameImage(testutil.LoadTestImage(t, "../testdata/screenshots/230700_20190517185334_1.png"))
+	imgB := ingest.CropGameImage(testutil.LoadTestImage(t, "../testdata/screenshots/230700_20190519134145_1.png"))
+
+	hashA := calcImageHash(imgA)
+	hashB := calcImageHash(imgB)
+
+	assert.NotEqual(t, hashA, hashB)
+}
+
 func TestEncodeImageFailure(t *testing.T) {
 	img := image.NewRGBA(image.Rect(0, 0, 0, 0))
 	_, err := encodeImage(img)
@@ -89,14 +99,14 @@ func TestImportScreenshot(t *testing.T) {
 
 	assert.Equal(t, &model.ImageMetadata{
 		Pk:         1,
-		Hash:       "sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		Hash:       "sha256-8acc37faaea0c3ff4ea847288a76e5f713d5857f14bf6dbdeffe7dbedd3234db",
 		CapturedAt: time.Date(2019, time.Month(5), 19, 13, 41, 40, 0, time.Local),
 		FileName:   "230700_20190519134140_1.png",
 	}, metaA)
 
 	assert.Equal(t, &model.ImageMetadata{
 		Pk:         2,
-		Hash:       "sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+		Hash:       "sha256-8acc37faaea0c3ff4ea847288a76e5f713d5857f14bf6dbdeffe7dbedd3234db",
 		CapturedAt: time.Date(2019, time.Month(5), 19, 13, 41, 45, 0, time.Local),
 		FileName:   "230700_20190519134145_1.png",
 	}, metaB)
