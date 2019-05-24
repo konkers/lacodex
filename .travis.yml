@@ -2,6 +2,12 @@ language: go
 sudo: true
 go:
  - 1.10.x
+
+# Only build master branch.  This avoids double builds when pushing pr branches.
+branches:
+  only:
+    - master
+
 before_install:
   # We need tesseract 4 to get reliable recognition.
   - sudo add-apt-repository -y ppa:alex-p/tesseract-ocr
