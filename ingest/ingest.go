@@ -28,7 +28,7 @@ var normalColor = color.RGBA{230, 232, 236, 255}
 var blueColor = color.RGBA{100, 182, 227, 255}
 var greenColor = color.RGBA{96, 229, 147, 255}
 
-func middleCrop(img image.Image, width int, height int) image.Image {
+func middleCrop(img image.Image, width int, height int) *image.RGBA {
 	bounds := img.Bounds()
 	insetX := bounds.Min.X + (bounds.Dx()-width)/2
 	insetY := bounds.Min.Y + (bounds.Dy()-height)/2
@@ -36,7 +36,7 @@ func middleCrop(img image.Image, width int, height int) image.Image {
 	return transform.Crop(img, cropRect)
 }
 
-func CropGameImage(img image.Image) image.Image {
+func CropGameImage(img image.Image) *image.RGBA {
 	// First calculate the scale and crop.
 	bounds := img.Bounds()
 	scale := bounds.Dy() / nativeHeight

@@ -36,8 +36,8 @@ func TestCalcImageHash(t *testing.T) {
 	imgA := ingest.CropGameImage(testutil.LoadTestImage(t, "../testdata/screenshots/230700_20190519134140_1.png"))
 	imgB := ingest.CropGameImage(testutil.LoadTestImage(t, "../testdata/screenshots/230700_20190519134145_1.png"))
 
-	hashA := calcImageHash(imgA.(*image.RGBA))
-	hashB := calcImageHash(imgB.(*image.RGBA))
+	hashA := calcImageHash(imgA)
+	hashB := calcImageHash(imgB)
 
 	assert.Equal(t, hashA, hashB)
 }
@@ -68,11 +68,11 @@ func TestImportScreenshot(t *testing.T) {
 	imgA := ingest.CropGameImage(testutil.LoadTestImage(t, "../testdata/screenshots/230700_20190519134140_1.png"))
 	imgB := ingest.CropGameImage(testutil.LoadTestImage(t, "../testdata/screenshots/230700_20190519134145_1.png"))
 
-	err = idb.ImportScreenshot("230700_20190519134140_1.png", imgA.(*image.RGBA))
+	err = idb.ImportScreenshot("230700_20190519134140_1.png", imgA)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = idb.ImportScreenshot("230700_20190519134145_1.png", imgB.(*image.RGBA))
+	err = idb.ImportScreenshot("230700_20190519134145_1.png", imgB)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +116,7 @@ func TestImportScreenshot(t *testing.T) {
 	}
 
 	// Test failure case: Bad file name.
-	err = idb.ImportScreenshot("230700_2019051913414_1.png", imgA.(*image.RGBA))
+	err = idb.ImportScreenshot("230700_2019051913414_1.png", imgA)
 	if err == nil {
 		t.Fatal("Expected error")
 	}
